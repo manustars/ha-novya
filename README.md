@@ -23,7 +23,7 @@ It connects to the Novya REST API and lets you:
 
 ### HACS (recommended)
 1. In HACS, open the three-dot menu → **Custom repositories**.
-2. Add `https://github.com/__GH_USER__/novya-live-homeassistant` with category
+2. Add `https://github.com/manustars/novya-live-homeassistant` with category
    **Integration**.
 3. Search for **Novya.live**, install it, and restart Home Assistant.
 4. Go to **Settings → Devices & Services → Add Integration → Novya.live**.
