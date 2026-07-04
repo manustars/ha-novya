@@ -174,7 +174,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         except (NovyaApiError, NovyaAuthError) as err:
             raise HomeAssistantError(f"Generation failed: {err}") from err
 
-        task_id = task.get("id") if isinstance(task, dict) else None
+        task_id = task.get("jobId") if isinstance(task, dict) else None
         hass.bus.async_fire(EVENT_GENERATION_STARTED, {"task_id": task_id, "task": task})
         if (coordinator := _first_coordinator(hass)) is not None:
             await coordinator.async_request_refresh()

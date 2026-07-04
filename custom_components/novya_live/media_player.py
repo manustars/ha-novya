@@ -370,9 +370,10 @@ class NovyaRadioPlayer(MediaPlayerEntity):
                 {
                     "songId": self._current_song_id,
                     "elapsedSeconds": elapsed,
-                    "rating": "skip" if skipped else None,
                 }
             )
+            if skipped:
+                await self._api.async_rate_song(self._current_song_id, "skip")
         except (NovyaApiError, NovyaAuthError) as err:
             _LOGGER.debug("Progress report failed: %s", err)
 
