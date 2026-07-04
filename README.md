@@ -36,6 +36,20 @@ It connects to the Novya REST API and lets you:
 3. Go to **Settings → Devices & Services → Add Integration** and search for
    **Novya.live**.
 
+### Updating
+
+Every update (via HACS or manual copy) **requires a full Home Assistant
+restart** to take effect — reloading the integration is not enough, since
+Python keeps the previously loaded code in memory.
+
+Since neither HACS nor Home Assistant reliably warn you about this on their
+own, the integration checks for itself: once the files on disk no longer
+match the version currently running in memory, it raises a **Repair**
+(**Settings → System → Repairs**) telling you a restart is needed — click
+**Fix** there to restart Home Assistant directly. This check runs every 5
+minutes (piggy-backing on the regular status refresh), so it can take a few
+minutes to appear after an update.
+
 ## Configuration
 
 You will be asked for:

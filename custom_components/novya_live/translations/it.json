@@ -57,5 +57,19 @@
         }
       }
     }
+  },
+  "issues": {
+    "restart_required": {
+      "title": "L'aggiornamento di Novya.live richiede un riavvio",
+      "description": "È stata installata la versione {new_version}, ma Home Assistant sta ancora eseguendo in memoria la versione {current_version}. Riavvia Home Assistant per applicare l'aggiornamento.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Riavvia Home Assistant",
+            "description": "Riavviare ora per applicare Novya.live {new_version}?"
+          }
+        }
+      }
+    }
   }
 }

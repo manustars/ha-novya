@@ -2,9 +2,31 @@
 
 from __future__ import annotations
 
+import json
 from datetime import timedelta
+from pathlib import Path
 
 DOMAIN = "novya_live"
+
+ISSUE_RESTART_REQUIRED = "restart_required"
+
+
+def read_manifest_version() -> str | None:
+    """Read the version field straight from manifest.json on disk.
+
+    Bypasses Python's module import cache, so it reflects files HACS may have
+    already replaced on disk even before Home Assistant is restarted.
+    """
+    try:
+        manifest = json.loads((Path(__file__).parent / "manifest.json").read_text())
+    except OSError:
+        return None
+    return manifest.get("version")
+
+
+# Captured once, when this module is first imported after a Home Assistant
+# start/restart -- i.e. the version actually running in memory right now.
+RUNNING_VERSION = read_manifest_version()
 
 CONF_BASE_URL = "base_url"
 CONF_EMAIL = "email"

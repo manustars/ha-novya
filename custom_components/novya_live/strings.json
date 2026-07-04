@@ -57,5 +57,19 @@
         }
       }
     }
+  },
+  "issues": {
+    "restart_required": {
+      "title": "Novya.live update needs a restart",
+      "description": "Version {new_version} was installed, but Home Assistant is still running version {current_version} from memory. Restart Home Assistant to apply the update.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Restart Home Assistant",
+            "description": "Restart now to apply Novya.live {new_version}?"
+          }
+        }
+      }
+    }
   }
 }
