@@ -125,13 +125,18 @@ class NovyaRadioPlayer(MediaPlayerEntity):
 
     @property
     def state(self) -> MediaPlayerState | None:
-        """Mirror the target's playback state."""
+        """Mirror the target's playback state.
+
+        Always IDLE rather than OFF when not playing: this entity has no
+        power state of its own, and the frontend media-control card hides
+        playback controls (including Play) for players reported as OFF.
+        """
         st = self._target_state()
         if st is None:
             return None
         if st.state in _ACTIVE_STATES:
             return MediaPlayerState(st.state)
-        return MediaPlayerState.IDLE if self._active else MediaPlayerState.OFF
+        return MediaPlayerState.IDLE
 
     @property
     def media_title(self) -> str | None:

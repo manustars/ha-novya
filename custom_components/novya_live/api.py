@@ -297,12 +297,12 @@ def _as_list(data: Any) -> list[Any]:
     """Coerce common API list shapes into a plain list.
 
     Different Novya endpoints may return either a raw array or an object that
-    wraps the array under ``items`` / ``data`` / ``songs`` / ``results``.
+    wraps the array under ``items`` / ``data`` / ``songs`` / ``results`` / etc.
     """
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
-        for key in ("items", "data", "songs", "results", "tasks"):
+        for key in ("items", "data", "songs", "results", "tasks", "genres", "playlists"):
             if isinstance(data.get(key), list):
                 return data[key]
     return []

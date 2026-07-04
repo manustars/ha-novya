@@ -36,12 +36,14 @@ async def async_setup_entry(
     genres: list[str] = []
     try:
         raw = await api.async_get_all_genres()
-    except NovyaApiError:
+    except NovyaApiError as err:
+        _LOGGER.debug("GET /api/genres failed: %s", err)
         raw = []
     if not raw:
         try:
             raw = await api.async_get_popular_genres()
-        except NovyaApiError:
+        except NovyaApiError as err:
+            _LOGGER.debug("GET /api/songs/popular-genres failed: %s", err)
             raw = []
     seen: set[str] = set()
     for item in raw:
@@ -49,6 +51,12 @@ async def async_setup_entry(
         if name and name.lower() not in seen:
             seen.add(name.lower())
             genres.append(name)
+
+    if not genres:
+        _LOGGER.warning(
+            "Could not extract any genre names from the Novya API; raw response was: %s",
+            raw,
+        )
 
     # Make sure a genre already seeded from the (legacy) options is always a
     # valid choice, even if it's missing from the fetched catalogue.
