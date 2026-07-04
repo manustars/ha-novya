@@ -343,6 +343,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         for _ in range(_MAX_GENERATING_SKIPS):
             track = self._queue.pop(0) if self._queue else await self._api.async_next_track()
             ttype = track.get("type")
+            _LOGGER.debug("Novya playlist/next returned track type=%s: %s", ttype, track)
             if ttype == "song":
                 song = track.get("song") or {}
                 song_id = song.get("id")
@@ -370,6 +371,12 @@ class NovyaRadioPlayer(MediaPlayerEntity):
                 or st.attributes.get("media_duration")
                 or 0
             )
+        _LOGGER.debug(
+            "Reporting progress for song %s: elapsedSeconds=%s (target state=%s)",
+            self._current_song_id,
+            elapsed,
+            st.state if st is not None else None,
+        )
         try:
             await self._api.async_report_progress(
                 {
