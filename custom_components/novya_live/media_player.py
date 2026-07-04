@@ -89,6 +89,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
 
         self._active = False
         self._advancing = False
+        self._user_paused = False
         self._queue: list[dict[str, Any]] = []
         self._current_song: dict[str, Any] | None = None
         self._current_song_id: str | None = None
@@ -200,7 +201,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         old_state = event.data.get("old_state")
         if new_state is not None:
             self.async_write_ha_state()
-        if not self._active or self._advancing:
+        if not self._active or self._advancing or self._user_paused:
             return
         if new_state is None or old_state is None:
             return
@@ -211,18 +212,26 @@ class NovyaRadioPlayer(MediaPlayerEntity):
 
     async def async_media_play(self) -> None:
         """Start the radio, or resume the target if already active."""
+        self._user_paused = False
         if self._active and (self._current_song_id or self._current_ad_id):
             await self._target_call("media_play")
         else:
             await self._start_radio()
 
     async def async_media_pause(self) -> None:
-        """Pause playback on the target."""
+        """Pause playback on the target and stop auto-advancing.
+
+        Some targets (e.g. Chromecast) drop the media session to idle/off
+        after sitting paused for a while; without this flag that transition
+        was mistaken for "track ended" and the radio resumed on its own.
+        """
+        self._user_paused = True
         await self._target_call("media_pause")
 
     async def async_media_stop(self) -> None:
         """Stop the radio."""
         self._active = False
+        self._user_paused = False
         self._entry.runtime_data.vibe.session_active = False
         self._queue = []
         self._clear_current()
@@ -231,6 +240,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
 
     async def async_media_next_track(self) -> None:
         """Skip to the next track."""
+        self._user_paused = False
         if not self._active:
             await self._start_radio()
         else:
@@ -282,6 +292,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             media_id = async_process_play_media_url(self.hass, resolved.url)
 
         self._active = False
+        self._user_paused = False
         self._entry.runtime_data.vibe.session_active = False
         self._queue = []
         self._clear_current()
