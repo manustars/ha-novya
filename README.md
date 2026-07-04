@@ -8,9 +8,10 @@ It connects to the Novya REST API and lets you:
 
 - **Listen**: browse and play your Novya songs on any media player (Sonos,
   Chromecast, VLC, speakers…) via the Home Assistant **Media Browser** —
-  Recent songs, **By genre**, your **Favorite genres** and **Your library**.
-- **Playlist / Radio**: a dedicated **Novya Playlist** media player that runs the
-  backend-managed listening session as a continuous, auto-advancing radio —
+  Recent songs, **By genre**, your **Favorite genres**, **Your library** and
+  **Your playlists**.
+- **InfinityPlay / Radio**: a dedicated **Novya InfinityPlay** media player that runs
+  the backend-managed listening session as a continuous, auto-advancing radio —
   play, pause, next track, now-playing title and artwork — driving the speaker
   you choose in the options.
 - **Generate**: trigger AI music generation from automations, scripts or the UI.
@@ -72,13 +73,13 @@ from your Novya music preferences) or **Your library** (your own songs), then
 play onto any speaker. Streaming URLs are public, so playback works on any
 device.
 
-**Continuous radio (playlist)** — use the **Novya Playlist** media player
+**Continuous radio (InfinityPlay)** — use the **Novya InfinityPlay** media player
 (`media_player.novya_live_*_playlist`):
 
 1. Open **Settings → Devices & Services → Novya → Configure** and pick the
    **Target media player** (the speaker the radio should play on). You can also
    set default genres / mood / exploration level.
-2. Press **Play** on the Novya Playlist entity. It starts a backend session and
+2. Press **Play** on the Novya InfinityPlay entity. It starts a backend session and
    plays the queue, automatically advancing to the next AI-generated track when
    the current one ends. **Next** skips, **Pause/Stop** control playback, and the
    card shows the current title and cover art.
@@ -145,10 +146,12 @@ data:
 
 - **By any genre**: media browser → *By genre*.
 - **Your favorite genres**: media browser → *Favorite genres* (pulled from your
-  Novya preferences: `favoriteGenres`). The **Playlist** player also starts from
+  Novya preferences: `favoriteGenres`). The **InfinityPlay** player also starts from
   these by default when you haven't set genres in the options.
 - **Your own songs**: media browser → *Your library*.
-- **On the fly**: `novya.set_vibe` to change genre/mood while the Playlist plays.
+- **Your saved playlists**: media browser → *Your playlists* → open one to see
+  and play its songs in order.
+- **On the fly**: `novya.set_vibe` to change genre/mood while InfinityPlay plays.
 
 > Note on "favorites": Novya stores favorite **genres/moods** in your
 > preferences (used above), and per-song **like/dislike** ratings (service
@@ -173,7 +176,7 @@ patterns that remain valid through the 2025.x releases).
 
 ## Notes / limitations
 
-- The **Novya Playlist** player and the `play_radio` service target one of your
+- The **Novya InfinityPlay** player and the `play_radio` service target one of your
   existing media players, because HA entities can't emit audio by themselves.
 - Auto-advance detects the target player finishing a track (transition to
   idle/off). Most players behave this way; very unusual players may need the

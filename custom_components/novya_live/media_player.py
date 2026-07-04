@@ -63,7 +63,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
     """A continuous Novya radio that controls a target media player."""
 
     _attr_has_entity_name = True
-    _attr_name = "Playlist"
+    _attr_name = "InfinityPlay"
     _attr_media_content_type = MediaType.MUSIC
     _attr_supported_features = (
         MediaPlayerEntityFeature.PLAY

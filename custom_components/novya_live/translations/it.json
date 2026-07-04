@@ -17,7 +17,7 @@
       "unknown": "Errore imprevisto."
     },
     "abort": {
-      "already_configured": "Questo account Novya \u00e8 gi\u00e0 configurato."
+      "already_configured": "Questo account Novya è già configurato."
     }
   },
   "entity": {
@@ -40,7 +40,7 @@
     },
     "media_player": {
       "radio": {
-        "name": "Playlist"
+        "name": "InfinityPlay"
       }
     }
   },

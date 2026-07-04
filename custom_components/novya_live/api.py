@@ -14,6 +14,7 @@ from .const import (
     PATH_LIBRARY_GENRES,
     PATH_LOGIN,
     PATH_NEXT,
+    PATH_PLAYLISTS,
     PATH_POPULAR_GENRES,
     PATH_PREFERENCES,
     PATH_PROFILE,
@@ -255,6 +256,15 @@ class NovyaApiClient:
             params={"type": type, "genre": genre, "page": page, "limit": limit},
         )
         return _as_list(data)
+
+    async def async_list_playlists(self) -> list[dict[str, Any]]:
+        """List the current user's saved playlists (response shape not documented in the spec)."""
+        return _as_list(await self._request("GET", PATH_PLAYLISTS))
+
+    async def async_get_playlist(self, playlist_id: str) -> dict[str, Any]:
+        """Get a saved playlist with its ordered songs (shape not documented in the spec)."""
+        data = await self._request("GET", f"{PATH_PLAYLISTS}/{playlist_id}")
+        return data if isinstance(data, dict) else {}
 
     async def async_get_library_best_effort(
         self, candidates: list[str], genre: str = ""

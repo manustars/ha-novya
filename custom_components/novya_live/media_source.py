@@ -22,7 +22,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 
 from . import NovyaConfigEntry
-from .api import NovyaApiClient, NovyaApiError
+from .api import NovyaApiClient, NovyaApiError, _as_list
 from .const import DOMAIN
 
 MIME_TYPE = "audio/mpeg"
@@ -54,6 +54,28 @@ def _genre_name(item: Any) -> str | None:
     if isinstance(item, dict):
         return _song_field(item, "genre", "name", "tag", "value")
     return None
+
+
+def _playlist_id(playlist: dict[str, Any]) -> Any:
+    return _song_field(playlist, "id", "playlistId", "_id")
+
+
+def _playlist_name(playlist: dict[str, Any]) -> str:
+    return _song_field(playlist, "name", "title") or "Untitled playlist"
+
+
+def _playlist_songs(playlist: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract the ordered song list from a playlist detail payload.
+
+    Item shape is not documented in the spec: each entry may be the song
+    itself, or a wrapper like {"song": {...}}.
+    """
+    items = _as_list(playlist)
+    songs = []
+    for item in items:
+        if isinstance(item, dict):
+            songs.append(item.get("song") if isinstance(item.get("song"), dict) else item)
+    return songs
 
 
 class NovyaMediaSource(MediaSource):
@@ -154,6 +176,28 @@ class NovyaMediaSource(MediaSource):
                 entry_id, "library", "Your library", api, songs
             )
 
+        if section == "playlists":
+            try:
+                playlists = await api.async_list_playlists()
+            except NovyaApiError as err:
+                raise Unresolvable(str(err)) from err
+            return self._playlists_listing(entry_id, playlists)
+
+        if section == "playlist" and len(parts) == 3:
+            playlist_id = unquote(parts[2])
+            try:
+                playlist = await api.async_get_playlist(playlist_id)
+            except NovyaApiError as err:
+                raise Unresolvable(str(err)) from err
+            songs = _playlist_songs(playlist)
+            return self._songs_listing(
+                entry_id,
+                f"playlist/{quote(playlist_id, safe='')}",
+                _playlist_name(playlist),
+                api,
+                songs,
+            )
+
         if section == "genre" and len(parts) == 3:
             genre = unquote(parts[2])
             try:
@@ -234,6 +278,15 @@ class NovyaMediaSource(MediaSource):
                 can_play=False,
                 can_expand=True,
             ),
+            BrowseMediaSource(
+                domain=DOMAIN,
+                identifier=f"{eid}/playlists",
+                media_class=MediaClass.DIRECTORY,
+                media_content_type=MediaType.MUSIC,
+                title="Your playlists",
+                can_play=False,
+                can_expand=True,
+            ),
         ]
         return BrowseMediaSource(
             domain=DOMAIN,
@@ -274,6 +327,39 @@ class NovyaMediaSource(MediaSource):
             media_class=MediaClass.DIRECTORY,
             media_content_type=MediaType.MUSIC,
             title=title,
+            can_play=False,
+            can_expand=True,
+            children_media_class=MediaClass.DIRECTORY,
+            children=children,
+        )
+
+    def _playlists_listing(
+        self, entry_id: str, playlists: list[dict[str, Any]]
+    ) -> BrowseMediaSource:
+        children = []
+        for playlist in playlists:
+            if not isinstance(playlist, dict):
+                continue
+            playlist_id = _playlist_id(playlist)
+            if not playlist_id:
+                continue
+            children.append(
+                BrowseMediaSource(
+                    domain=DOMAIN,
+                    identifier=f"{entry_id}/playlist/{quote(str(playlist_id), safe='')}",
+                    media_class=MediaClass.DIRECTORY,
+                    media_content_type=MediaType.MUSIC,
+                    title=_playlist_name(playlist),
+                    can_play=False,
+                    can_expand=True,
+                )
+            )
+        return BrowseMediaSource(
+            domain=DOMAIN,
+            identifier=f"{entry_id}/playlists",
+            media_class=MediaClass.DIRECTORY,
+            media_content_type=MediaType.MUSIC,
+            title="Your playlists",
             can_play=False,
             can_expand=True,
             children_media_class=MediaClass.DIRECTORY,

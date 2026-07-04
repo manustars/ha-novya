@@ -40,6 +40,9 @@ PATH_SESSION = "/api/playlist/session"
 PATH_NEXT = "/api/playlist/next"
 PATH_PROGRESS = "/api/playlist/progress"
 
+# Saved playlists (distinct from the /api/playlist/* radio session above).
+PATH_PLAYLISTS = "/api/playlists"
+
 # Public (no-auth) media paths.
 PATH_STREAM = "/api/songs/stream/{song_id}"
 PATH_COVER = "/api/songs/{song_id}/cover"
