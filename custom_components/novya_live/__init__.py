@@ -160,10 +160,10 @@ def _track_stream_url(api: NovyaApiClient, track: dict[str, Any]) -> str:
         return api.stream_url(song_id)
     if ttype == "ad":
         ad = track.get("ad") or {}
-        url = ad.get("streamUrl")
-        if not url:
-            raise HomeAssistantError("Ad has no stream URL")
-        return url if url.startswith("http") else f"{api.base_url}{url}"
+        ad_id = ad.get("id")
+        if not ad_id:
+            raise HomeAssistantError("Ad has no id")
+        return api.ad_stream_url(ad_id)
     raise HomeAssistantError(
         "Next track is still being generated; try again in a moment"
     )

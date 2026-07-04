@@ -85,6 +85,7 @@ PATH_PLAYLISTS = "/api/playlists"
 # Public (no-auth) media paths.
 PATH_STREAM = "/api/songs/stream/{song_id}"
 PATH_COVER = "/api/songs/{song_id}/cover"
+PATH_ADS_STREAM = "/api/ads/{ad_id}/stream"
 
 # Service names.
 SERVICE_GENERATE_SONG = "generate_song"

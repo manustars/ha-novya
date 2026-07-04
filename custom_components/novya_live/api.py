@@ -8,6 +8,7 @@ from typing import Any
 from aiohttp import ClientError, ClientSession
 
 from .const import (
+    PATH_ADS_STREAM,
     PATH_COVER,
     PATH_GENERATIONS,
     PATH_GENRES,
@@ -74,6 +75,16 @@ class NovyaApiClient:
     def cover_url(self, song_id: str) -> str:
         """Return the public cover image URL for a song (no auth required)."""
         return f"{self._base_url}{PATH_COVER.format(song_id=song_id)}"
+
+    def ad_stream_url(self, ad_id: str) -> str:
+        """Return the public streaming URL for an ad (no auth required).
+
+        Built from the documented ``/api/ads/{id}/stream`` path rather than
+        the ad payload's own ``streamUrl`` field, which the backend returns
+        without the ``/api`` prefix (e.g. ``/ads/{id}/stream``) and is
+        therefore not directly reachable.
+        """
+        return f"{self._base_url}{PATH_ADS_STREAM.format(ad_id=ad_id)}"
 
     async def async_login(self) -> dict[str, Any]:
         """Authenticate and cache the access token."""

@@ -351,10 +351,11 @@ class NovyaRadioPlayer(MediaPlayerEntity):
                     return self._api.stream_url(song_id), song
             elif ttype == "ad":
                 ad = track.get("ad") or {}
-                url = ad.get("streamUrl")
-                if url:
-                    full = url if url.startswith("http") else f"{self._api.base_url}{url}"
-                    return full, {"title": ad.get("title", "Advertisement")}
+                ad_id = ad.get("id")
+                if ad_id:
+                    return self._api.ad_stream_url(ad_id), {
+                        "title": ad.get("title", "Advertisement")
+                    }
             # 'generating' or malformed -> wait briefly and try the next one
             await asyncio.sleep(2)
         return None
