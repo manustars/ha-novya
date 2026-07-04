@@ -91,8 +91,7 @@ device.
 (`media_player.novya_live_*_playlist`):
 
 1. Open **Settings → Devices & Services → Novya → Configure** and pick the
-   **Target media player** (the speaker the radio should play on). You can also
-   set default genres / mood / exploration level.
+   **Target media player** (the speaker the radio should play on).
 2. Press **Play** on the Novya InfinityPlay entity. It starts a backend session and
    plays the queue, automatically advancing to the next AI-generated track when
    the current one ends. **Next** skips, **Pause/Stop** control playback, and the
@@ -100,6 +99,23 @@ device.
 
 The radio also exposes **Browse media**, so you can pick a single Novya song from
 the radio card itself.
+
+**Choosing the vibe from the dashboard** — three entities on the Novya device
+let you set genre, mood and exploration level without opening the options or
+calling a service:
+
+| Entity | Description |
+|--------|-------------|
+| `select.novya_live_infinityplay_genre` | Genre (options pulled from the Novya genre catalogue) |
+| `select.novya_live_infinityplay_mood` | Mood (curated list — the API has no fixed enum for this) |
+| `number.novya_live_infinityplay_exploration_level` | 0 (stick to taste) to 5 (explore) |
+
+Changing any of these while InfinityPlay is playing steers the running
+session immediately (same effect as `novya.set_vibe`); it also becomes the
+default the next time you press **Play**. The **Target media player** /
+genres / mood / exploration level fields in the options screen still exist
+and only act as the *initial* seed on first setup — after that, use these
+three entities instead.
 
 > Why a target speaker? Home Assistant entities can't emit audio on their own, so
 > the radio drives one of your existing media players. Change the target anytime

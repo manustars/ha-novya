@@ -10,6 +10,7 @@ from aiohttp import ClientError, ClientSession
 from .const import (
     PATH_COVER,
     PATH_GENERATIONS,
+    PATH_GENRES,
     PATH_LIBRARY,
     PATH_LIBRARY_GENRES,
     PATH_LOGIN,
@@ -212,6 +213,11 @@ class NovyaApiClient:
     async def async_get_popular_genres(self) -> list[Any]:
         """Get the most popular genres by song count."""
         data = await self._request("GET", PATH_POPULAR_GENRES, auth=False)
+        return _as_list(data)
+
+    async def async_get_all_genres(self) -> list[Any]:
+        """Get the full genre catalogue (with song counts)."""
+        data = await self._request("GET", PATH_GENRES, auth=False)
         return _as_list(data)
 
     # --- Backend radio session -------------------------------------------

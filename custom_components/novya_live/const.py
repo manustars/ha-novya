@@ -43,7 +43,23 @@ DEFAULT_BASE_URL = "https://app.novya.live"
 # Polling interval for usage / subscription / generation status.
 UPDATE_INTERVAL = timedelta(minutes=5)
 
-PLATFORMS = ["media_player", "sensor"]
+PLATFORMS = ["media_player", "sensor", "select", "number"]
+
+# Curated mood list for the InfinityPlay mood selector -- the API has no
+# endpoint listing valid moods (StartSessionDto.mood is a free string).
+INFINITYPLAY_MOODS = [
+    "energetic",
+    "happy",
+    "chill",
+    "relaxed",
+    "romantic",
+    "melancholic",
+    "sad",
+    "dreamy",
+    "uplifting",
+    "aggressive",
+    "peaceful",
+]
 
 # API paths (already include the /api prefix where required by the spec).
 PATH_LOGIN = "/api/auth/login"
@@ -53,6 +69,7 @@ PATH_SUBSCRIPTION = "/api/subscription/me"
 PATH_GENERATIONS = "/api/generation"
 PATH_SONGS = "/api/songs"
 PATH_RANDOM = "/api/songs/random"
+PATH_GENRES = "/api/genres"
 PATH_POPULAR_GENRES = "/api/songs/popular-genres"
 PATH_LIBRARY = "/api/songs/library"
 PATH_LIBRARY_GENRES = "/api/songs/library/genres"

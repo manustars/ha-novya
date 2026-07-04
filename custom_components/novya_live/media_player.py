@@ -29,13 +29,7 @@ from homeassistant.helpers.event import async_track_state_change_event
 
 from . import NovyaConfigEntry
 from .api import NovyaApiClient, NovyaApiError, NovyaAuthError
-from .const import (
-    CONF_EXPLORATION,
-    CONF_GENRES,
-    CONF_MOOD,
-    CONF_TARGET,
-    DOMAIN,
-)
+from .const import CONF_TARGET, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -211,6 +205,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
     async def async_media_stop(self) -> None:
         """Stop the radio."""
         self._active = False
+        self._entry.runtime_data.vibe.session_active = False
         self._queue = []
         self._clear_current()
         await self._target_call("media_stop")
@@ -265,6 +260,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             media_id = async_process_play_media_url(self.hass, resolved.url)
 
         self._active = False
+        self._entry.runtime_data.vibe.session_active = False
         self._queue = []
         self._clear_current()
         await self._target_call(
@@ -281,12 +277,13 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             raise HomeAssistantError(
                 "No target media player set. Configure one in the Novya options."
             )
+        vibe = self._entry.runtime_data.vibe
         payload = {
-            "genres": self._entry.options.get(CONF_GENRES),
-            "mood": self._entry.options.get(CONF_MOOD),
-            "explorationLevel": self._entry.options.get(CONF_EXPLORATION),
+            "genres": [vibe.genre] if vibe.genre else None,
+            "mood": vibe.mood,
+            "explorationLevel": vibe.exploration_level,
         }
-        # Fall back to the user's saved preferences when no option is set.
+        # Fall back to the user's saved preferences when no vibe is set yet.
         if not payload["genres"] or not payload["mood"]:
             try:
                 prefs = await self._api.async_get_preferences()
@@ -306,6 +303,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         if not self._queue and (current := session.get("currentSong")):
             self._queue = [{"type": "song", "song": current}]
         self._active = True
+        vibe.session_active = True
         await self._play_next()
 
     async def _play_next(self) -> None:
@@ -319,6 +317,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             if track is None:
                 _LOGGER.warning("Novya returned no playable track; stopping radio")
                 self._active = False
+                self._entry.runtime_data.vibe.session_active = False
                 return
             url, song = track
             self._set_current(song)
@@ -329,6 +328,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         except (NovyaApiError, NovyaAuthError) as err:
             _LOGGER.error("Novya radio error: %s", err)
             self._active = False
+            self._entry.runtime_data.vibe.session_active = False
         finally:
             self._advancing = False
             self.async_write_ha_state()

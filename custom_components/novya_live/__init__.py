@@ -24,6 +24,9 @@ from .api import NovyaApiClient, NovyaApiError, NovyaAuthError
 from .const import (
     CONF_BASE_URL,
     CONF_EMAIL,
+    CONF_EXPLORATION,
+    CONF_GENRES,
+    CONF_MOOD,
     CONF_PASSWORD,
     DEFAULT_BASE_URL,
     DOMAIN,
@@ -41,11 +44,28 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
+class NovyaVibe:
+    """The genre/mood/exploration level InfinityPlay currently uses.
+
+    Shared (mutable) between the InfinityPlay media player and the genre/mood
+    select + exploration level number entities, so changing one of those
+    entities on the dashboard both steers a running session live and becomes
+    the default for the next time InfinityPlay is started.
+    """
+
+    genre: str | None = None
+    mood: str | None = None
+    exploration_level: float = 1.0
+    session_active: bool = False
+
+
+@dataclass
 class NovyaRuntimeData:
     """Objects kept alive for the lifetime of a config entry."""
 
     api: NovyaApiClient
     coordinator: NovyaCoordinator
+    vibe: NovyaVibe
 
 
 type NovyaConfigEntry = ConfigEntry[NovyaRuntimeData]
@@ -64,7 +84,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: NovyaConfigEntry) -> boo
     coordinator = NovyaCoordinator(hass, entry, api)
     await coordinator.async_config_entry_first_refresh()
 
-    entry.runtime_data = NovyaRuntimeData(api=api, coordinator=coordinator)
+    # Seed the shared vibe from the (legacy) options-based defaults, if set.
+    option_genres = entry.options.get(CONF_GENRES) or []
+    vibe = NovyaVibe(
+        genre=option_genres[0] if option_genres else None,
+        mood=entry.options.get(CONF_MOOD),
+        exploration_level=entry.options.get(CONF_EXPLORATION, 1.0),
+    )
+
+    entry.runtime_data = NovyaRuntimeData(api=api, coordinator=coordinator, vibe=vibe)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
