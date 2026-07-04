@@ -276,19 +276,18 @@ class NovyaRadioPlayer(MediaPlayerEntity):
 
     # --- radio engine -----------------------------------------------------
 
-    async def _start_radio(self) -> None:
-        """Start a backend session and begin playback."""
-        if not self._target:
-            raise HomeAssistantError(
-                "No target media player set. Configure one in the Novya options."
-            )
+    async def _session_payload(self) -> dict[str, Any]:
+        """Build the genres/mood/exploration payload from the shared vibe.
+
+        Falls back to the user's saved preferences for whichever of
+        genres/mood isn't set yet.
+        """
         vibe = self._entry.runtime_data.vibe
         payload = {
             "genres": [vibe.genre] if vibe.genre else None,
             "mood": vibe.mood,
             "explorationLevel": vibe.exploration_level,
         }
-        # Fall back to the user's saved preferences when no vibe is set yet.
         if not payload["genres"] or not payload["mood"]:
             try:
                 prefs = await self._api.async_get_preferences()
@@ -299,8 +298,16 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             if not payload["mood"] and prefs.get("moodPreferences"):
                 moods = prefs["moodPreferences"]
                 payload["mood"] = moods[0] if moods else None
+        return payload
+
+    async def _start_radio(self) -> None:
+        """Start a backend session and begin playback."""
+        if not self._target:
+            raise HomeAssistantError(
+                "No target media player set. Configure one in the Novya options."
+            )
         try:
-            session = await self._api.async_start_session(payload)
+            session = await self._api.async_start_session(await self._session_payload())
         except (NovyaApiError, NovyaAuthError) as err:
             raise HomeAssistantError(f"Could not start Novya radio: {err}") from err
 
@@ -308,7 +315,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         if not self._queue and (current := session.get("currentSong")):
             self._queue = [{"type": "song", "song": current}]
         self._active = True
-        vibe.session_active = True
+        self._entry.runtime_data.vibe.session_active = True
         await self._play_next()
 
     async def _play_next(self) -> None:
@@ -340,8 +347,31 @@ class NovyaRadioPlayer(MediaPlayerEntity):
 
     async def _next_playable_track(self) -> tuple[str, dict[str, Any] | None] | None:
         """Return (url, song) for the next song/ad, skipping 'generating' items."""
+        session_restarted = False
         for _ in range(_MAX_GENERATING_SKIPS):
-            track = self._queue.pop(0) if self._queue else await self._api.async_next_track()
+            if self._queue:
+                track = self._queue.pop(0)
+            else:
+                try:
+                    track = await self._api.async_next_track()
+                except NovyaApiError as err:
+                    if session_restarted:
+                        raise
+                    # The backend session likely expired/was invalidated
+                    # server-side; start a fresh one instead of stopping.
+                    _LOGGER.warning(
+                        "Novya playlist/next failed (%s); starting a new session", err
+                    )
+                    session_restarted = True
+                    session = await self._api.async_start_session(
+                        await self._session_payload()
+                    )
+                    self._queue = list(session.get("initialQueue") or [])
+                    if not self._queue and (current := session.get("currentSong")):
+                        self._queue = [{"type": "song", "song": current}]
+                    if not self._queue:
+                        continue
+                    track = self._queue.pop(0)
             ttype = track.get("type")
             _LOGGER.debug("Novya playlist/next returned track type=%s: %s", ttype, track)
             if ttype == "song":
