@@ -1,0 +1,149 @@
+generate_song:
+  name: Generate song
+  description: Start an AI music generation task on Novya.
+  fields:
+    prompt:
+      name: Prompt
+      description: Text description of the song to generate.
+      required: true
+      example: An upbeat synthwave track about driving at night
+      selector:
+        text:
+    lyrics:
+      name: Lyrics
+      description: Optional lyrics for the song.
+      selector:
+        text:
+          multiline: true
+    genre:
+      name: Genre
+      example: pop
+      selector:
+        text:
+    mood:
+      name: Mood
+      example: energetic
+      selector:
+        text:
+    duration:
+      name: Duration (seconds)
+      example: 180
+      selector:
+        number:
+          min: 15
+          max: 600
+          unit_of_measurement: s
+          mode: box
+    bpm:
+      name: BPM
+      example: 120
+      selector:
+        number:
+          min: 40
+          max: 220
+          mode: box
+    vocal_language:
+      name: Vocal language
+      example: en
+      selector:
+        text:
+
+rate_song:
+  name: Rate song
+  description: Like, dislike or skip a song to improve recommendations.
+  fields:
+    song_id:
+      name: Song ID
+      required: true
+      selector:
+        text:
+    rating:
+      name: Rating
+      required: true
+      selector:
+        select:
+          options:
+            - like
+            - dislike
+            - skip
+
+play_radio:
+  name: Play radio
+  description: >-
+    Start a backend-managed Novya listening session and play the first track on
+    a media player.
+  fields:
+    entity_id:
+      name: Media player
+      description: The media player to play on.
+      required: true
+      selector:
+        entity:
+          domain: media_player
+    prompt:
+      name: Prompt
+      selector:
+        text:
+    genres:
+      name: Genres
+      selector:
+        text:
+          multiple: true
+    mood:
+      name: Mood
+      selector:
+        text:
+    languages:
+      name: Languages
+      selector:
+        text:
+          multiple: true
+    exploration_level:
+      name: Exploration level
+      description: 0 = stick to taste, higher = more exploration.
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.5
+          mode: slider
+
+radio_next:
+  name: Radio next track
+  description: Skip to the next track of the current Novya session on a player.
+  fields:
+    entity_id:
+      name: Media player
+      required: true
+      selector:
+        entity:
+          domain: media_player
+
+set_vibe:
+  name: Set playlist vibe
+  description: >-
+    Change the current Novya playlist on the fly (genre, mood, prompt). Affects
+    the next tracks of the running session.
+  fields:
+    genres:
+      name: Genres
+      selector:
+        text:
+          multiple: true
+    mood:
+      name: Mood
+      example: chill
+      selector:
+        text:
+    prompt:
+      name: Prompt
+      selector:
+        text:
+    exploration_level:
+      name: Exploration level
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.5
+          mode: slider

@@ -1,0 +1,61 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Novya.live",
+        "description": "Sign in with your Novya.live account.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "base_url": "Server URL"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email or password.",
+      "cannot_connect": "Failed to connect to the Novya server.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Novya account is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "generations_used_today": {
+        "name": "Generations used today"
+      },
+      "generations_remaining_today": {
+        "name": "Generations remaining today"
+      },
+      "daily_generation_limit": {
+        "name": "Daily generation limit"
+      },
+      "subscription_status": {
+        "name": "Subscription status"
+      },
+      "latest_generation_status": {
+        "name": "Latest generation status"
+      }
+    },
+    "media_player": {
+      "radio": {
+        "name": "Playlist"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Novya radio options",
+        "description": "Choose the speaker that Novya Radio controls and set default vibe.",
+        "data": {
+          "target_entity_id": "Target media player",
+          "genres": "Default genres",
+          "mood": "Default mood",
+          "exploration_level": "Exploration level"
+        }
+      }
+    }
+  }
+}

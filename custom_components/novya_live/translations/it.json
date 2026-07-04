@@ -1,0 +1,61 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connetti a Novya.live",
+        "description": "Accedi con il tuo account Novya.live.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "base_url": "URL del server"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Email o password non validi.",
+      "cannot_connect": "Impossibile connettersi al server Novya.",
+      "unknown": "Errore imprevisto."
+    },
+    "abort": {
+      "already_configured": "Questo account Novya \u00e8 gi\u00e0 configurato."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "generations_used_today": {
+        "name": "Generazioni usate oggi"
+      },
+      "generations_remaining_today": {
+        "name": "Generazioni rimanenti oggi"
+      },
+      "daily_generation_limit": {
+        "name": "Limite generazioni giornaliero"
+      },
+      "subscription_status": {
+        "name": "Stato abbonamento"
+      },
+      "latest_generation_status": {
+        "name": "Stato ultima generazione"
+      }
+    },
+    "media_player": {
+      "radio": {
+        "name": "Playlist"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni radio Novya",
+        "description": "Scegli il diffusore controllato da Novya Radio e imposta lo stile predefinito.",
+        "data": {
+          "target_entity_id": "Media player di destinazione",
+          "genres": "Generi predefiniti",
+          "mood": "Mood predefinito",
+          "exploration_level": "Livello di esplorazione"
+        }
+      }
+    }
+  }
+}
