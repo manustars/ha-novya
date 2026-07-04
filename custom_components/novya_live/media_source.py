@@ -298,7 +298,7 @@ class NovyaMediaSource(MediaSource):
                     domain=DOMAIN,
                     identifier=f"{entry_id}/song/{song_id}",
                     media_class=MediaClass.MUSIC,
-                    media_content_type=MediaType.MUSIC,
+                    media_content_type=MIME_TYPE,
                     title=_song_title(song),
                     can_play=True,
                     can_expand=False,
