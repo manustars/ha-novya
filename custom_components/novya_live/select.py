@@ -20,7 +20,10 @@ def _genre_name(item: Any) -> str | None:
     if isinstance(item, str):
         return item
     if isinstance(item, dict):
-        for key in ("genre", "name", "tag", "value"):
+        # GET /api/genres returns {"displayName": ..., "slug": ..., ...};
+        # other shapes are covered defensively since the response isn't
+        # documented in the spec.
+        for key in ("displayName", "genre", "name", "slug", "tag", "value"):
             if item.get(key):
                 return item[key]
     return None
