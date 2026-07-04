@@ -93,6 +93,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         self._current_song: dict[str, Any] | None = None
         self._current_song_id: str | None = None
         self._current_ad_id: str | None = None
+        self._current_ad_duration: float | None = None
         self._current_title: str | None = None
         self._current_artist: str | None = None
         self._current_image: str | None = None
@@ -406,7 +407,10 @@ class NovyaRadioPlayer(MediaPlayerEntity):
                 if ad_id:
                     return (
                         self._api.ad_stream_url(ad_id),
-                        {"title": ad.get("title", "Advertisement")},
+                        {
+                            "title": ad.get("title", "Advertisement"),
+                            "duration": ad.get("duration"),
+                        },
                         ad_id,
                     )
             # 'generating' or malformed -> wait briefly and try the next one
@@ -458,9 +462,17 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             await self._send_progress(_PROGRESS_INTERVAL)
 
     async def _finalize_current_progress(self) -> None:
-        """Report the remaining listened time for the track that just ended."""
+        """Report the listened time for the track that just ended.
+
+        Ads report their own declared ``duration`` once, with
+        ``adCompleted: true`` -- this is what clears the pending ad
+        server-side. Songs report the remainder since the last heartbeat.
+        """
         self._cancel_progress_ticker()
-        if not self._current_song_id and not self._current_ad_id:
+        if self._current_ad_id:
+            await self._send_progress(self._current_ad_duration or 0, ad_completed=True)
+            return
+        if not self._current_song_id:
             return
         st = self._target_state()
         total_elapsed = 0.0
@@ -471,9 +483,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
                 or 0
             )
         remainder = total_elapsed - self._reported_elapsed
-        await self._send_progress(
-            max(remainder, 0), ad_completed=bool(self._current_ad_id)
-        )
+        await self._send_progress(max(remainder, 0))
 
     # --- metadata bookkeeping --------------------------------------------
 
@@ -483,6 +493,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             self._clear_current()
             return
         self._current_ad_id = ad_id
+        self._current_ad_duration = info.get("duration") if ad_id else None
         self._current_song_id = None if ad_id else info.get("id")
         self._current_title = (
             info.get("title") or info.get("name") or info.get("prompt") or "Novya"
@@ -495,13 +506,18 @@ class NovyaRadioPlayer(MediaPlayerEntity):
             if self._current_song_id
             else None
         )
-        self._start_progress_ticker()
+        if ad_id:
+            # Ads are short and reported once on completion, not periodically.
+            self._cancel_progress_ticker()
+        else:
+            self._start_progress_ticker()
 
     def _clear_current(self) -> None:
         self._cancel_progress_ticker()
         self._current_song = None
         self._current_song_id = None
         self._current_ad_id = None
+        self._current_ad_duration = None
         self._current_title = None
         self._current_artist = None
         self._current_image = None
