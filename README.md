@@ -121,6 +121,14 @@ three entities instead.
 > the radio drives one of your existing media players. Change the target anytime
 > in the options — the integration reloads automatically.
 
+## Dashboard card
+
+A ready-made Lovelace card (InfinityPlay controls, vibe selectors, account
+status) is available in [`dashboard-card.txt`](dashboard-card.txt) at the
+root of this repository — copy the YAML, replace the `CHANGE_ME` placeholders
+with your own entity IDs (instructions included in the file), and paste it
+into a manual card on your dashboard.
+
 ## Services
 
 ### `novya.generate_song`

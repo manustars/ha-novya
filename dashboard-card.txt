@@ -1,0 +1,92 @@
+Novya.live - Ready-made Lovelace dashboard card
+================================================
+
+This is a starting-point card for your Home Assistant dashboard: InfinityPlay
+media controls, the genre/mood/exploration level selectors, and an account
+status overview.
+
+HOW TO ADD IT
+--------------
+1. Open the dashboard where you want the card.
+2. Click "Edit dashboard" (top right) -> "+ Add card".
+3. Scroll to the bottom and choose "Manual".
+4. Delete the placeholder content and paste the YAML below.
+5. Replace every "CHANGE_ME" with your own entity IDs (see next section).
+6. Save.
+
+HOW TO FIND YOUR ENTITY IDs
+----------------------------
+The "CHANGE_ME" part of each entity_id depends on your account/instance and
+cannot be guessed. To find your real entity IDs:
+
+  Settings -> Devices & Services -> Novya.live -> click the device
+  (lists every entity belonging to this integration)
+
+  or
+
+  Developer Tools -> States -> filter by "novya" / "infinityplay"
+
+Copy each real entity_id shown there and use it in place of the matching
+"CHANGE_ME" line below. Note: depending on whether you've assigned the Novya
+device to an Area in Home Assistant, some entity IDs (mainly select/number)
+may include an extra area-name prefix (e.g. "select.studio_novya_live_..."
+instead of "select.novya_live_..."). Always copy the exact entity_id from the
+device page rather than assuming the pattern below matches yours exactly.
+
+THE CARD
+--------
+type: vertical-stack
+cards:
+  - type: media-control
+    entity: media_player.novya_live_CHANGE_ME_playlist
+
+  - type: entities
+    title: InfinityPlay vibe
+    show_header_toggle: false
+    entities:
+      - entity: select.novya_live_CHANGE_ME_infinityplay_genre
+        name: Genre
+      - entity: select.novya_live_CHANGE_ME_infinityplay_mood
+        name: Mood
+      - entity: number.novya_live_CHANGE_ME_infinityplay_exploration_level
+        name: Exploration level
+
+  - type: glance
+    title: Novya account
+    columns: 3
+    entities:
+      - entity: sensor.novya_live_CHANGE_ME_generations_remaining_today
+        name: Remaining
+      - entity: sensor.novya_live_CHANGE_ME_generations_used_today
+        name: Used today
+      - entity: sensor.novya_live_CHANGE_ME_daily_generation_limit
+        name: Daily limit
+      - entity: sensor.novya_live_CHANGE_ME_subscription_status
+        name: Plan
+      - entity: sensor.novya_live_CHANGE_ME_latest_generation_status
+        name: Last gen
+      - entity: update.novya_update
+        name: Integration
+
+NOTES
+-----
+- media-control card: cover art, title/artist, play/pause/next/stop, volume.
+- "InfinityPlay vibe": change genre/mood/exploration level on the fly; if
+  InfinityPlay is currently playing, the change steers the session live
+  (same effect as the novya.set_vibe service); otherwise it becomes the
+  default for the next time you press Play.
+- "Novya account": daily generation quota, subscription plan, status of the
+  latest AI generation, and whether an integration update is available
+  ("update.novya_update" does not use a CHANGE_ME placeholder -- it's a single
+  global entity for the integration, not per-account).
+- media-control does not show a dedicated Stop button by default. If you want
+  one, add an extra button card:
+
+  - type: button
+    entity: media_player.novya_live_CHANGE_ME_playlist
+    name: Stop InfinityPlay
+    tap_action:
+      action: call-service
+      service: media_player.media_stop
+      target:
+        entity_id: media_player.novya_live_CHANGE_ME_playlist
