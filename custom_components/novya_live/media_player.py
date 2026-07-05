@@ -67,12 +67,16 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         | MediaPlayerEntityFeature.PAUSE
         | MediaPlayerEntityFeature.STOP
         | MediaPlayerEntityFeature.NEXT_TRACK
+        | MediaPlayerEntityFeature.PREVIOUS_TRACK
+        | MediaPlayerEntityFeature.SEEK
         | MediaPlayerEntityFeature.PLAY_MEDIA
         | MediaPlayerEntityFeature.BROWSE_MEDIA
         | MediaPlayerEntityFeature.VOLUME_SET
         | MediaPlayerEntityFeature.VOLUME_STEP
         | MediaPlayerEntityFeature.VOLUME_MUTE
     )
+    # How many previously played songs to remember for "Previous track".
+    _MAX_HISTORY = 20
 
     def __init__(self, entry: NovyaConfigEntry) -> None:
         """Initialise the radio player."""
@@ -91,6 +95,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         self._advancing = False
         self._user_paused = False
         self._queue: list[dict[str, Any]] = []
+        self._history: list[str] = []
         self._current_song: dict[str, Any] | None = None
         self._current_song_id: str | None = None
         self._current_ad_id: str | None = None
@@ -163,6 +168,23 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         if self._current_song_id:
             return self._api.stream_url(self._current_song_id)
         return None
+
+    @property
+    def media_duration(self) -> int | None:
+        """Mirror the target's track duration, for the position/seek bar."""
+        st = self._target_state()
+        return st.attributes.get("media_duration") if st else None
+
+    @property
+    def media_position(self) -> int | None:
+        """Mirror the target's playback position, for the position/seek bar."""
+        st = self._target_state()
+        return st.attributes.get("media_position") if st else None
+
+    @property
+    def media_position_updated_at(self):
+        st = self._target_state()
+        return st.attributes.get("media_position_updated_at") if st else None
 
     @property
     def volume_level(self) -> float | None:
@@ -250,6 +272,41 @@ class NovyaRadioPlayer(MediaPlayerEntity):
                 except (NovyaApiError, NovyaAuthError) as err:
                     _LOGGER.debug("Skip rating failed: %s", err)
             await self._play_next()
+
+    async def async_media_previous_track(self) -> None:
+        """Go back to the previously played song."""
+        if not self._active or self._advancing or not self._history:
+            return
+        self._user_paused = False
+        self._advancing = True
+        try:
+            await self._finalize_current_progress()
+            song_id = self._history.pop()
+            try:
+                track = await self._api.async_previous_track(song_id)
+            except (NovyaApiError, NovyaAuthError) as err:
+                raise HomeAssistantError(
+                    f"Could not go to previous track: {err}"
+                ) from err
+            song = track.get("song") or {} if track.get("type") == "song" else {}
+            new_song_id = song.get("id")
+            if not new_song_id:
+                return
+            self._set_current(song)
+            await self._target_call(
+                "play_media",
+                {
+                    "media_content_id": self._api.stream_url(new_song_id),
+                    "media_content_type": MediaType.MUSIC,
+                },
+            )
+        finally:
+            self._advancing = False
+            self.async_write_ha_state()
+
+    async def async_media_seek(self, position: float) -> None:
+        """Seek within the currently playing track on the target."""
+        await self._target_call("media_seek", {"seek_position": position})
 
     async def async_set_volume_level(self, volume: float) -> None:
         await self._target_call("volume_set", {"volume_level": volume})
@@ -499,6 +556,11 @@ class NovyaRadioPlayer(MediaPlayerEntity):
     # --- metadata bookkeeping --------------------------------------------
 
     def _set_current(self, info: dict[str, Any] | None, ad_id: str | None = None) -> None:
+        # Remember the outgoing song (not ads) so "Previous" can return to it.
+        if self._current_song_id:
+            self._history.append(self._current_song_id)
+            self._history = self._history[-self._MAX_HISTORY :]
+
         self._current_song = info
         if not info:
             self._clear_current()

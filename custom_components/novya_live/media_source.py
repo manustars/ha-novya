@@ -176,6 +176,15 @@ class NovyaMediaSource(MediaSource):
                 entry_id, "library", "Your library", api, songs
             )
 
+        if section == "favsongs":
+            try:
+                songs = await api.async_get_library(type="liked", genre="")
+            except NovyaApiError as err:
+                raise Unresolvable(str(err)) from err
+            return self._songs_listing(
+                entry_id, "favsongs", "Favorite songs", api, songs
+            )
+
         if section == "playlists":
             try:
                 playlists = await api.async_list_playlists()
@@ -266,6 +275,15 @@ class NovyaMediaSource(MediaSource):
                 media_class=MediaClass.DIRECTORY,
                 media_content_type=MediaType.MUSIC,
                 title="Favorite genres",
+                can_play=False,
+                can_expand=True,
+            ),
+            BrowseMediaSource(
+                domain=DOMAIN,
+                identifier=f"{eid}/favsongs",
+                media_class=MediaClass.DIRECTORY,
+                media_content_type=MediaType.MUSIC,
+                title="Favorite songs",
                 can_play=False,
                 can_expand=True,
             ),

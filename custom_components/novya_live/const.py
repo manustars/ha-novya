@@ -77,6 +77,7 @@ PATH_PREFERENCES = "/api/users/me/preferences"
 PATH_RATE = "/api/songs/{song_id}/rate"
 PATH_SESSION = "/api/playlist/session"
 PATH_NEXT = "/api/playlist/next"
+PATH_PREVIOUS = "/api/playlist/previous"
 PATH_PROGRESS = "/api/playlist/progress"
 
 # Saved playlists (distinct from the /api/playlist/* radio session above).

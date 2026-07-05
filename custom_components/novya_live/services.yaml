@@ -100,12 +100,12 @@ play_radio:
           multiple: true
     exploration_level:
       name: Exploration level
-      description: 0 = stick to taste, higher = more exploration.
+      description: 0 = focused, 1 = balanced, 2 = explore.
       selector:
         number:
           min: 0
-          max: 5
-          step: 0.5
+          max: 2
+          step: 1
           mode: slider
 
 radio_next:
@@ -141,9 +141,10 @@ set_vibe:
         text:
     exploration_level:
       name: Exploration level
+      description: 0 = focused, 1 = balanced, 2 = explore.
       selector:
         number:
           min: 0
-          max: 5
-          step: 0.5
+          max: 2
+          step: 1
           mode: slider

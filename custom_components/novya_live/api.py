@@ -19,6 +19,7 @@ from .const import (
     PATH_PLAYLISTS,
     PATH_POPULAR_GENRES,
     PATH_PREFERENCES,
+    PATH_PREVIOUS,
     PATH_PROFILE,
     PATH_PROGRESS,
     PATH_RANDOM,
@@ -241,6 +242,10 @@ class NovyaApiClient:
     async def async_next_track(self) -> dict[str, Any]:
         """Get the next track (song or ad) for the current session."""
         return await self._request("POST", PATH_NEXT)
+
+    async def async_previous_track(self, song_id: str) -> dict[str, Any]:
+        """Go back to a previously played song in the current session."""
+        return await self._request("POST", PATH_PREVIOUS, json={"songId": song_id})
 
     async def async_report_progress(self, payload: dict[str, Any]) -> Any:
         """Report playback progress for the current session."""

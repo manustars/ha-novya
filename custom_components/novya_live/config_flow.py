@@ -133,7 +133,7 @@ class NovyaOptionsFlow(OptionsFlow):
                     default=options.get(CONF_EXPLORATION, 1),
                 ): selector.NumberSelector(
                     selector.NumberSelectorConfig(
-                        min=0, max=5, step=0.5, mode=selector.NumberSelectorMode.SLIDER
+                        min=0, max=2, step=1, mode=selector.NumberSelectorMode.SLIDER
                     )
                 ),
             }

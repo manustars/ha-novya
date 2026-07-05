@@ -25,14 +25,18 @@ async def async_setup_entry(
 
 
 class NovyaExplorationLevelNumber(NumberEntity):
-    """How far InfinityPlay strays from your usual taste (0=focused, 5=explore)."""
+    """How far InfinityPlay strays from your usual taste.
+
+    0=focused, 1=balanced, 2=explore -- these are the only values the Novya
+    API documents/accepts for explorationLevel.
+    """
 
     _attr_has_entity_name = True
     _attr_name = "InfinityPlay exploration level"
     _attr_icon = "mdi:compass-outline"
     _attr_native_min_value = 0
-    _attr_native_max_value = 5
-    _attr_native_step = 0.5
+    _attr_native_max_value = 2
+    _attr_native_step = 1
     _attr_mode = NumberMode.SLIDER
 
     def __init__(self, entry: NovyaConfigEntry) -> None:

@@ -8,12 +8,12 @@ It connects to the Novya REST API and lets you:
 
 - **Listen**: browse and play your Novya songs on any media player (Sonos,
   Chromecast, VLC, speakers…) via the Home Assistant **Media Browser** —
-  Recent songs, **By genre**, your **Favorite genres**, **Your library** and
-  **Your playlists**.
+  Recent songs, **By genre**, your **Favorite genres**, **Favorite songs**,
+  **Your library** and **Your playlists**.
 - **InfinityPlay / Radio**: a dedicated **Novya InfinityPlay** media player that runs
   the backend-managed listening session as a continuous, auto-advancing radio —
-  play, pause, next track, now-playing title and artwork — driving the speaker
-  you choose in the options.
+  play, pause, **previous**/next track, seek within the current track,
+  now-playing title and artwork — driving the speaker you choose in the options.
 - **Generate**: trigger AI music generation from automations, scripts or the UI.
 - **Monitor** your account with sensors: daily generations used / remaining,
   daily limit, subscription status and the status of your latest AI generation.
@@ -108,7 +108,7 @@ calling a service:
 |--------|-------------|
 | `select.novya_live_infinityplay_genre` | Genre (options pulled from the Novya genre catalogue) |
 | `select.novya_live_infinityplay_mood` | Mood (curated list — the API has no fixed enum for this) |
-| `number.novya_live_infinityplay_exploration_level` | 0 (stick to taste) to 5 (explore) |
+| `number.novya_live_infinityplay_exploration_level` | 0 (focused), 1 (balanced) or 2 (explore) — the only values the Novya API accepts |
 
 Changing any of these while InfinityPlay is playing steers the running
 session immediately (same effect as `novya.set_vibe`); it also becomes the
@@ -187,17 +187,20 @@ data:
   Novya preferences: `favoriteGenres`). The **InfinityPlay** player also starts from
   these by default when you haven't set genres in the options.
 - **Your own songs**: media browser → *Your library*.
+- **Songs you liked**: media browser → *Favorite songs* (songs rated with
+  `novya.rate_song` / `rating: like`).
 - **Your saved playlists**: media browser → *Your playlists* → open one to see
   and play its songs in order.
 - **On the fly**: `novya.set_vibe` to change genre/mood while InfinityPlay plays.
 
 > Note on "favorites": Novya stores favorite **genres/moods** in your
 > preferences (used above), and per-song **like/dislike** ratings (service
-> `novya.rate_song`) that feed your recommendations and taste profile. The API
-> does not expose a separate "liked songs" list, so there is no dedicated
-> *Liked* folder. *Your library* uses the `type` parameter, which is not
-> documented with fixed values — the integration probes a few (`all`,
-> `generated`, …) and uses the first that works.
+> `novya.rate_song`) that feed your recommendations and taste profile.
+> *Your library* and *Favorite songs* both use the library `type` parameter,
+> which is not documented with fixed values — *Your library* probes a few
+> (`all`, `generated`, …) and uses the first that works, while *Favorite
+> songs* requests `type=liked` directly. If that value turns out not to match
+> what the backend expects, the folder will just appear empty.
 
 ## Events
 
