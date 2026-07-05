@@ -94,8 +94,14 @@ device.
    **Target media player** (the speaker the radio should play on).
 2. Press **Play** on the Novya InfinityPlay entity. It starts a backend session and
    plays the queue, automatically advancing to the next AI-generated track when
-   the current one ends. **Next** skips, **Pause/Stop** control playback, and the
-   card shows the current title and cover art.
+   the current one ends. **Previous**/**Next** move between tracks, **Pause/Stop**
+   control playback, and the card shows the current title, cover art and playback
+   position.
+
+If the next track is still being AI-generated (accounts with on-demand
+generation enabled), the card shows **"Generating your music…"** with a
+buffering indicator instead of looking stuck — it waits up to 2 minutes before
+giving up.
 
 The radio also exposes **Browse media**, so you can pick a single Novya song from
 the radio card itself.

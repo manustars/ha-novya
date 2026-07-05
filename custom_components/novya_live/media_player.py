@@ -40,8 +40,12 @@ _ACTIVE_STATES = {
     MediaPlayerState.PAUSED,
     MediaPlayerState.BUFFERING,
 }
-# Max consecutive "still generating" tracks to skip before giving up.
+# Max consecutive malformed/unexpected track responses to skip before giving up.
 _MAX_GENERATING_SKIPS = 6
+# While the backend reports "generating" (an AI track is being synthesized),
+# poll patiently instead of giving up after a few seconds.
+_GENERATING_POLL_INTERVAL = 3
+_GENERATING_MAX_WAIT = 120
 # How often to report listening progress while a track plays, matching the
 # cadence of the official web client (it posts ~every 10s).
 _PROGRESS_INTERVAL = 10
@@ -94,6 +98,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         self._active = False
         self._advancing = False
         self._user_paused = False
+        self._generating = False
         self._queue: list[dict[str, Any]] = []
         self._history: list[str] = []
         self._current_song: dict[str, Any] | None = None
@@ -143,24 +148,34 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         Always IDLE rather than OFF when not playing: this entity has no
         power state of its own, and the frontend media-control card hides
         playback controls (including Play) for players reported as OFF.
+        BUFFERING while waiting for the backend to finish generating a track,
+        so the card shows a loading indicator instead of looking stuck.
         """
         st = self._target_state()
         if st is None:
             return None
+        if self._generating:
+            return MediaPlayerState.BUFFERING
         if st.state in _ACTIVE_STATES:
             return MediaPlayerState(st.state)
         return MediaPlayerState.IDLE
 
     @property
     def media_title(self) -> str | None:
+        if self._generating:
+            return "Generating your music…"
         return self._current_title
 
     @property
     def media_artist(self) -> str | None:
+        if self._generating:
+            return None
         return self._current_artist
 
     @property
     def media_image_url(self) -> str | None:
+        if self._generating:
+            return None
         return self._current_image
 
     @property
@@ -411,6 +426,9 @@ class NovyaRadioPlayer(MediaPlayerEntity):
         try:
             await self._finalize_current_progress()
             track = await self._next_playable_track()
+            if not self._active:
+                # Stopped (or a single song picked) while we were waiting.
+                return
             if track is None:
                 _LOGGER.warning("Novya returned no playable track; stopping radio")
                 self._active = False
@@ -433,57 +451,82 @@ class NovyaRadioPlayer(MediaPlayerEntity):
     async def _next_playable_track(
         self,
     ) -> tuple[str, dict[str, Any] | None, str | None] | None:
-        """Return (url, info, ad_id) for the next song/ad, skipping 'generating' items.
+        """Return (url, info, ad_id) for the next song/ad.
 
-        ``ad_id`` is None for songs.
+        ``ad_id`` is None for songs. While the backend reports "generating"
+        (an AI track being synthesized), this waits patiently -- up to
+        ``_GENERATING_MAX_WAIT`` seconds -- showing a buffering/"Generating
+        your music…" status instead of giving up after a few seconds.
+        Malformed/unexpected responses still only get a handful of retries.
         """
         session_restarted = False
-        for _ in range(_MAX_GENERATING_SKIPS):
-            if self._queue:
-                track = self._queue.pop(0)
-            else:
-                try:
-                    track = await self._api.async_next_track()
-                except NovyaApiError as err:
-                    if session_restarted:
-                        raise
-                    # The backend session likely expired/was invalidated
-                    # server-side; start a fresh one instead of stopping.
-                    _LOGGER.warning(
-                        "Novya playlist/next failed (%s); starting a new session", err
-                    )
-                    session_restarted = True
-                    session = await self._api.async_start_session(
-                        await self._session_payload()
-                    )
-                    self._queue = list(session.get("initialQueue") or [])
-                    if not self._queue and (current := session.get("currentSong")):
-                        self._queue = [{"type": "song", "song": current}]
-                    if not self._queue:
-                        continue
+        malformed_attempts = 0
+        generating_elapsed = 0.0
+        try:
+            while (
+                malformed_attempts < _MAX_GENERATING_SKIPS
+                and generating_elapsed < _GENERATING_MAX_WAIT
+            ):
+                if self._queue:
                     track = self._queue.pop(0)
-            ttype = track.get("type")
-            _LOGGER.debug("Novya playlist/next returned track type=%s: %s", ttype, track)
-            if ttype == "song":
-                song = track.get("song") or {}
-                song_id = song.get("id")
-                if song_id:
-                    return self._api.stream_url(song_id), song, None
-            elif ttype == "ad":
-                ad = track.get("ad") or {}
-                ad_id = ad.get("id")
-                if ad_id:
-                    return (
-                        self._api.ad_stream_url(ad_id),
-                        {
-                            "title": ad.get("title", "Advertisement"),
-                            "duration": ad.get("duration"),
-                        },
-                        ad_id,
-                    )
-            # 'generating' or malformed -> wait briefly and try the next one
-            await asyncio.sleep(2)
-        return None
+                else:
+                    try:
+                        track = await self._api.async_next_track()
+                    except NovyaApiError as err:
+                        if session_restarted:
+                            raise
+                        # The backend session likely expired/was invalidated
+                        # server-side; start a fresh one instead of stopping.
+                        _LOGGER.warning(
+                            "Novya playlist/next failed (%s); starting a new session",
+                            err,
+                        )
+                        session_restarted = True
+                        session = await self._api.async_start_session(
+                            await self._session_payload()
+                        )
+                        self._queue = list(session.get("initialQueue") or [])
+                        if not self._queue and (
+                            current := session.get("currentSong")
+                        ):
+                            self._queue = [{"type": "song", "song": current}]
+                        if not self._queue:
+                            continue
+                        track = self._queue.pop(0)
+                ttype = track.get("type")
+                _LOGGER.debug(
+                    "Novya playlist/next returned track type=%s: %s", ttype, track
+                )
+                if ttype == "song":
+                    song = track.get("song") or {}
+                    song_id = song.get("id")
+                    if song_id:
+                        return self._api.stream_url(song_id), song, None
+                elif ttype == "ad":
+                    ad = track.get("ad") or {}
+                    ad_id = ad.get("id")
+                    if ad_id:
+                        return (
+                            self._api.ad_stream_url(ad_id),
+                            {
+                                "title": ad.get("title", "Advertisement"),
+                                "duration": ad.get("duration"),
+                            },
+                            ad_id,
+                        )
+                elif ttype == "generating":
+                    if not self._generating:
+                        self._generating = True
+                        self.async_write_ha_state()
+                    generating_elapsed += _GENERATING_POLL_INTERVAL
+                    await asyncio.sleep(_GENERATING_POLL_INTERVAL)
+                    continue
+                # Malformed/unexpected item -> brief retry.
+                malformed_attempts += 1
+                await asyncio.sleep(2)
+            return None
+        finally:
+            self._generating = False
 
     async def _send_progress(self, elapsed: float, ad_completed: bool = False) -> None:
         """Report a chunk of listening time for the current song or ad.
@@ -587,6 +630,7 @@ class NovyaRadioPlayer(MediaPlayerEntity):
 
     def _clear_current(self) -> None:
         self._cancel_progress_ticker()
+        self._generating = False
         self._current_song = None
         self._current_song_id = None
         self._current_ad_id = None
